@@ -1,0 +1,8 @@
+POST http://localhost:5000/api/student/add
+Content-Type: application/json
+
+{
+  "name": "Rahul",
+  "room": "A-12",
+  "phone": "9876543210"
+}
