@@ -12,9 +12,15 @@ const ExitLog = require("./models/ExitLog");
 const StaffUser = require("./models/StaffUser"); 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
-
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://your-vercel-domain.vercel.app"
+    ],
+    credentials: true
+  })
+);
 /* ==============================
    MONGODB
 ============================== */
