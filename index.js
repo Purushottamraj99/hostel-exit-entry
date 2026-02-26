@@ -10,14 +10,18 @@ const PDFDocument = require("pdfkit");
 const Student = require("./models/Student");
 const ExitLog = require("./models/ExitLog");
 const StaffUser = require("./models/StaffUser"); 
-const app = express();
 
+const app = express();
+app.use(express.json());
 app.use(cors({
   origin: [
     "https://hostel-gatepass.vercel.app"
   ],
   credentials: true
 }));
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 /* ==============================
    MONGODB
 ============================== */
