@@ -12,15 +12,12 @@ const ExitLog = require("./models/ExitLog");
 const StaffUser = require("./models/StaffUser"); 
 const app = express();
 
-app.use(
-  cors({
-    origin: [
-      "http://localhost:5173",
-      "https://your-vercel-domain.vercel.app"
-    ],
-    credentials: true
-  })
-);
+app.use(cors({
+  origin: [
+    "https://hostel-gatepass.vercel.app"
+  ],
+  credentials: true
+}));
 /* ==============================
    MONGODB
 ============================== */
@@ -439,7 +436,7 @@ doc.image(
 
     /* ===== QR CODE ===== */
     const verifyUrl =
-      `http://localhost:5000/api/verify-pass/${log._id}`;
+ `${process.env.BASE_URL}/api/verify-pass/${log._id}`;
 
     const qrData = await QRCode.toDataURL(verifyUrl);
 
