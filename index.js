@@ -12,16 +12,16 @@ const ExitLog = require("./models/ExitLog");
 const StaffUser = require("./models/StaffUser"); 
 
 const app = express();
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 app.use(cors({
   origin: [
     "https://hostel-gatepass.vercel.app"
   ],
   credentials: true
 }));
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 /* ==============================
    MONGODB
 ============================== */
