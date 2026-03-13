@@ -6,18 +6,23 @@ const exitLogSchema = new mongoose.Schema({
   room: String,
 
   reason: String,
-  reasonCategory: String,  
+  reasonCategory: String,
+
+  // NEW
+  approvalStatus: {
+    type: String,
+    enum: ["PENDING", "APPROVED", "REJECTED"],
+    default: "PENDING"
+  },
 
   status: {
     type: String,
-    default: "OUT"
+    enum: ["PENDING", "OUT", "IN"],
+    default: "PENDING"
   },
 
-  exitTime: {
-    type: Date,
-    default: Date.now
-  },
-  
+  exitTime: Date,
+
   entryTime: Date,
 
   allowedMinutes: {

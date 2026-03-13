@@ -289,11 +289,13 @@ app.post("/api/login", async (req, res) => {
 ============================== */
 
 app.post("/api/exit", async (req, res) => {
+
   const { studentId, reason } = req.body;
 
   const student = await Student.findOne({ studentId });
+
   if (!student)
-    return res.json({ success: false, message: "Student not found" });
+    return res.json({ success:false, message:"Student not found" });
 
   const smart = classifyReason(reason);
 
@@ -304,13 +306,80 @@ app.post("/api/exit", async (req, res) => {
     reason,
     reasonCategory: smart.category,
     allowedMinutes: smart.allowedMinutes,
-    status: "OUT",
-    exitTime: new Date()
+    status: "PENDING",
+    approvalStatus: "PENDING"
   });
 
-  res.json({ success: true, log });
+  res.json({
+    success:true,
+    message:"Exit request sent to warden",
+    log
+  });
+
+});
+// APPROVAL WORKFLOW: PENDING -> APPROVED/REJECTED -> OUT (if approved) -> IN (on entry)  
+app.post("/api/approve-exit/:id", async (req,res)=>{
+
+  const log = await ExitLog.findById(req.params.id);
+
+  if(!log)
+    return res.json({success:false});
+
+  log.approvalStatus="APPROVED";
+  log.status="OUT";
+  log.exitTime=new Date();
+
+  await log.save();
+
+  res.json({success:true, log});
+
+});
+// APPROVE / REJECT API
+app.post("/api/approve-exit/:id", async (req,res)=>{
+
+  const log = await ExitLog.findById(req.params.id);
+
+  if(!log)
+    return res.json({success:false});
+
+  log.approvalStatus="APPROVED";
+  log.status="OUT";
+  log.exitTime=new Date();
+
+  await log.save();
+
+  res.json({success:true, log});
+
+});
+// REJECT API
+app.post("/api/reject-exit/:id", async (req,res)=>{
+
+  const log = await ExitLog.findById(req.params.id);
+
+  if(!log)
+    return res.json({success:false});
+
+  log.approvalStatus="REJECTED";
+
+  await log.save();
+
+  res.json({success:true});
+
+});
+// MY REQUESTS API
+app.get("/api/my-requests/:studentId", async (req,res)=>{
+
+  const data = await ExitLog.find({
+    studentId: req.params.studentId
+  }).sort({ createdAt:-1 });
+
+  res.json({
+    data
+  });
+
 });
 
+// ENTRY API
 app.post("/api/entry", async (req, res) => {
   const { studentId } = req.body;
 
@@ -433,7 +502,7 @@ doc.image(
     doc
       .fillColor("#0f172a")
       .fontSize(26)
-      .text("HOSTEL GATE PASS", 0, 75, {
+      .text("AGC HOSTEL GATE PASS", 0, 75, {
         align: "right",
         width: 450
       });
