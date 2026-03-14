@@ -334,23 +334,6 @@ app.post("/api/approve-exit/:id", async (req,res)=>{
   res.json({success:true, log});
 
 });
-// APPROVE / REJECT API
-app.post("/api/approve-exit/:id", async (req,res)=>{
-
-  const log = await ExitLog.findById(req.params.id);
-
-  if(!log)
-    return res.json({success:false});
-
-  log.approvalStatus="APPROVED";
-  log.status="OUT";
-  log.exitTime=new Date();
-
-  await log.save();
-
-  res.json({success:true, log});
-
-});
 // REJECT API
 app.post("/api/reject-exit/:id", async (req,res)=>{
 
@@ -366,6 +349,30 @@ app.post("/api/reject-exit/:id", async (req,res)=>{
   res.json({success:true});
 
 });
+
+// WARDEN: GET PENDING EXIT REQUESTS
+app.get("/api/exit-requests", async (req,res)=>{
+
+  try{
+
+    const data = await ExitLog.find({
+      approvalStatus: "PENDING"
+    }).sort({ createdAt:-1 });
+
+    res.json({
+      data
+    });
+
+  }catch(err){
+
+    res.status(500).json({
+      error: err.message
+    });
+
+  }
+
+});
+
 // MY REQUESTS API
 app.get("/api/my-requests/:studentId", async (req,res)=>{
 
