@@ -287,7 +287,6 @@ app.post("/api/login", async (req, res) => {
 /* ==============================
    EXIT / ENTRY
 ============================== */
-
 app.post("/api/exit", async (req, res) => {
 
   const { studentId, reason } = req.body;
@@ -296,6 +295,18 @@ app.post("/api/exit", async (req, res) => {
 
   if (!student)
     return res.json({ success:false, message:"Student not found" });
+
+  // 🔴 CHECK: already OUT or PENDING
+  const active = await ExitLog.findOne({
+    studentId,
+    status: { $in: ["OUT", "PENDING"] }
+  });
+
+  if (active)
+    return res.json({
+      success:false,
+      message:"You already have an active exit request"
+    });
 
   const smart = classifyReason(reason);
 
@@ -317,6 +328,7 @@ app.post("/api/exit", async (req, res) => {
   });
 
 });
+
 // APPROVAL WORKFLOW: PENDING -> APPROVED/REJECTED -> OUT (if approved) -> IN (on entry)  
 app.post("/api/approve-exit/:id", async (req,res)=>{
 
