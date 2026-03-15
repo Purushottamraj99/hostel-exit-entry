@@ -296,11 +296,17 @@ app.post("/api/exit", async (req, res) => {
   if (!student)
     return res.json({ success: false, message: "Student not found" });
 
-  // 🔴 CHECK: already OUT or PENDING
+  // CHECK pending approval
   const active = await ExitLog.findOne({
     studentId,
-    status: { $in: ["OUT", "PENDING"] }
+    approvalStatus: "PENDING"
   });
+
+  if (active)
+    return res.json({
+      success: false,
+      message: "You already have an active exit request"
+    });
 
   if (active)
     return res.json({
