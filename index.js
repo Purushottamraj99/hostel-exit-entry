@@ -9,7 +9,7 @@ const PDFDocument = require("pdfkit");
 
 const Student = require("./models/Student");
 const ExitLog = require("./models/ExitLog");
-const StaffUser = require("./models/StaffUser"); 
+const StaffUser = require("./models/StaffUser");
 
 const app = express();
 
@@ -123,7 +123,7 @@ app.put("/api/student/:id", async (req, res) => {
     const { id } = req.params;
 
     const updated = await Student.findOneAndUpdate(
-      { studentId: id },   
+      { studentId: id },
       req.body,
       { new: true }
     );
@@ -152,8 +152,8 @@ app.put("/api/student/:id", async (req, res) => {
 /* ==============================
    STAFF APIs
 ============================== */
-app.post("/api/staff/add", async (req,res)=>{
-  try{
+app.post("/api/staff/add", async (req, res) => {
+  try {
 
     const {
       name,
@@ -167,12 +167,12 @@ app.post("/api/staff/add", async (req,res)=>{
 
     const staffId =
       (role === "guard" ? "GRD" : "WRD") +
-      Math.floor(1000 + Math.random()*9000);
+      Math.floor(1000 + Math.random() * 9000);
 
     const rawPassword =
-      "PW" + Math.floor(1000 + Math.random()*9000);
+      "PW" + Math.floor(1000 + Math.random() * 9000);
 
-    const hashed = await bcrypt.hash(rawPassword,10);
+    const hashed = await bcrypt.hash(rawPassword, 10);
 
     const staff = new StaffUser({
       userId: staffId,
@@ -189,23 +189,23 @@ app.post("/api/staff/add", async (req,res)=>{
     await staff.save();
 
     res.json({
-      success:true,
-      login:{
+      success: true,
+      login: {
         staffId,
         password: rawPassword
       }
     });
 
-  }catch(err){
+  } catch (err) {
     res.status(500).json({
-      success:false,
+      success: false,
       error: err.message
     });
   }
 });
 
 // staff list
-app.get("/api/staff/list", async (req,res)=>{
+app.get("/api/staff/list", async (req, res) => {
   const data = await StaffUser.find()
     .select("-password");
 
@@ -213,18 +213,18 @@ app.get("/api/staff/list", async (req,res)=>{
 });
 
 // delete staff
-app.delete("/api/staff/:id", async (req,res)=>{
+app.delete("/api/staff/:id", async (req, res) => {
 
   await StaffUser.findByIdAndDelete(req.params.id);
 
   res.json({
-    success:true,
-    message:"Deleted"
+    success: true,
+    message: "Deleted"
   });
 });
 
 // edit staff
-app.put("/api/staff/:id", async (req,res)=>{
+app.put("/api/staff/:id", async (req, res) => {
 
   const { name, role } = req.body;
 
@@ -233,7 +233,7 @@ app.put("/api/staff/:id", async (req,res)=>{
     { name, role }
   );
 
-  res.json({ success:true });
+  res.json({ success: true });
 });
 /* ==============================
    LOGIN (STUDENT + STAFF)
@@ -294,7 +294,7 @@ app.post("/api/exit", async (req, res) => {
   const student = await Student.findOne({ studentId });
 
   if (!student)
-    return res.json({ success:false, message:"Student not found" });
+    return res.json({ success: false, message: "Student not found" });
 
   // 🔴 CHECK: already OUT or PENDING
   const active = await ExitLog.findOne({
@@ -304,8 +304,8 @@ app.post("/api/exit", async (req, res) => {
 
   if (active)
     return res.json({
-      success:false,
-      message:"You already have an active exit request"
+      success: false,
+      message: "You already have an active exit request"
     });
 
   const smart = classifyReason(reason);
@@ -320,62 +320,67 @@ app.post("/api/exit", async (req, res) => {
     status: "PENDING",
     approvalStatus: "PENDING"
   });
+  io.emit("new-exit-request", {
+    name: student.name,
+    room: student.room,
+    reason
+  });
 
   res.json({
-    success:true,
-    message:"Exit request sent to warden",
+    success: true,
+    message: "Exit request sent to warden",
     log
   });
 
 });
 
 // APPROVAL WORKFLOW: PENDING -> APPROVED/REJECTED -> OUT (if approved) -> IN (on entry)  
-app.post("/api/approve-exit/:id", async (req,res)=>{
+app.post("/api/approve-exit/:id", async (req, res) => {
 
   const log = await ExitLog.findById(req.params.id);
 
-  if(!log)
-    return res.json({success:false});
+  if (!log)
+    return res.json({ success: false });
 
-  log.approvalStatus="APPROVED";
-  log.status="OUT";
-  log.exitTime=new Date();
+  log.approvalStatus = "APPROVED";
+  log.status = "OUT";
+  log.exitTime = new Date();
 
   await log.save();
 
-  res.json({success:true, log});
+  res.json({ success: true, log });
 
 });
 // REJECT API
-app.post("/api/reject-exit/:id", async (req,res)=>{
+app.post("/api/reject-exit/:id", async (req, res) => {
 
   const log = await ExitLog.findById(req.params.id);
 
-  if(!log)
-    return res.json({success:false});
+  if (!log)
+    return res.json({ success: false });
 
-  log.approvalStatus="REJECTED";
+  log.approvalStatus = "REJECTED";
 
   await log.save();
 
-  res.json({success:true});
+  res.json({ success: true });
 
 });
 
 // WARDEN: GET PENDING EXIT REQUESTS
-app.get("/api/exit-requests", async (req,res)=>{
+app.get("/api/exit-requests", async (req, res) => {
 
-  try{
+  try {
 
     const data = await ExitLog.find({
       approvalStatus: "PENDING"
-    }).sort({ createdAt:-1 });
+    }).sort({ createdAt: -1 });
 
     res.json({
       data
     });
 
-  }catch(err){
+  } catch (err) {
 
     res.status(500).json({
       error: err.message
@@ -386,11 +391,11 @@ app.get("/api/exit-requests", async (req,res)=>{
 });
 
 // MY REQUESTS API
-app.get("/api/my-requests/:studentId", async (req,res)=>{
+app.get("/api/my-requests/:studentId", async (req, res) => {
 
   const data = await ExitLog.find({
     studentId: req.params.studentId
-  }).sort({ createdAt:-1 });
+  }).sort({ createdAt: -1 });
 
   res.json({
     data
@@ -451,7 +456,7 @@ app.get("/api/outside", async (req, res) => {
 
 app.get("/api/stats/today", async (req, res) => {
   const start = new Date();
-  start.setHours(0,0,0,0);
+  start.setHours(0, 0, 0, 0);
 
   const count = await ExitLog.countDocuments({
     exitTime: { $gte: start }
@@ -511,12 +516,12 @@ app.get("/api/pass/:logId", async (req, res) => {
     // ===== LOGO =====
     const path = require("path");
 
-doc.image(
-  path.join(__dirname, "assets", "logo.png"),
-  55,
-  50,
-  { width: 110 }
-);
+    doc.image(
+      path.join(__dirname, "assets", "logo.png"),
+      55,
+      50,
+      { width: 110 }
+    );
     // ===== TITLE =====
     doc
       .fillColor("#0f172a")
@@ -528,7 +533,7 @@ doc.image(
 
     /* ===== QR CODE ===== */
     const verifyUrl =
- `${process.env.BASE_URL}/api/verify-pass/${log._id}`;
+      `${process.env.BASE_URL}/api/verify-pass/${log._id}`;
 
     const qrData = await QRCode.toDataURL(verifyUrl);
 
@@ -599,10 +604,22 @@ doc.image(
     }
   }
 });
-/* ==============================
-   SERVER
-============================== */
+//* SERVER & SOCKET.IO SETUP *//
+const http = require("http");
+const { Server } = require("socket.io");
 
-app.listen(5000, () => {
-  console.log("Server started on https://hostel-exit-entry.onrender.com");
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "*"
+  }
+});
+
+io.on("connection", (socket) => {
+  console.log("Client connected");
+});
+
+server.listen(5000, () => {
+  console.log("Server started");
 });
