@@ -532,9 +532,9 @@ app.get("/api/pass/:logId", async (req, res) => {
     doc
       .fillColor("#0f172a")
       .fontSize(26)
-      .text("AGC HOSTEL GATE PASS", 0, 75, {
-        align: "right",
-        width: 450
+      .text("AGC HOSTEL GATE PASS", 200, 80, {
+        width: 320,
+        align: "left"
       });
 
     /* ===== QR CODE ===== */
