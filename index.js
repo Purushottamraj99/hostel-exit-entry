@@ -22,25 +22,21 @@ app.use(cors({
   ],
   credentials: true
 }));
-/* ==============================
-   MONGODB
-============================== */
+// ** MONGOOSE SETUP *//
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected"))
   .catch(err => console.log("Mongo Error:", err.message));
 
-/* ==============================
-   HELPERS
-============================== */
+// ** REASON CLASSIFICATION *//
 
 function classifyReason(reason = "") {
   const r = reason.toLowerCase();
 
-  if (r.includes("medical")) return { category: "MEDICAL", allowedMinutes: 180 };
-  if (r.includes("exam")) return { category: "ACADEMIC", allowedMinutes: 240 };
+  if (r.includes("medical,hospital,doctor,")) return { category: "MEDICAL", allowedMinutes: 180 };
+  if (r.includes("exam,class,college,library")) return { category: "ACADEMIC", allowedMinutes: 240 };
   if (r.includes("home")) return { category: "HOME", allowedMinutes: 300 };
-  if (r.includes("market")) return { category: "PERSONAL", allowedMinutes: 300 };
+  if (r.includes("market,shopping,")) return { category: "PERSONAL", allowedMinutes: 300 };
   if (r.includes("emergency")) return { category: "EMERGENCY", allowedMinutes: 240 };
 
   return { category: "OTHER", allowedMinutes: 60 };
@@ -96,7 +92,7 @@ app.post("/api/student/add", async (req, res) => {
     res.status(500).json({ success: false, error: e.message });
   }
 });
-
+// Student list
 app.get("/api/student/list", async (req, res) => {
   const list = await Student.find().select("-password");
   res.json(list);
@@ -113,9 +109,7 @@ app.delete("/api/student/:id", async (req, res) => {
   });
 });
 
-/* ===============================
-   EDIT STUDENT
-================================ */
+// Edit student (name, room, phone)
 
 app.put("/api/student/:id", async (req, res) => {
   try {
@@ -204,7 +198,7 @@ app.post("/api/staff/add", async (req, res) => {
   }
 });
 
-// staff list
+// Staff list//
 app.get("/api/staff/list", async (req, res) => {
   const data = await StaffUser.find()
     .select("-password");
@@ -212,7 +206,7 @@ app.get("/api/staff/list", async (req, res) => {
   res.json(data);
 });
 
-// delete staff
+// delete staff//
 app.delete("/api/staff/:id", async (req, res) => {
 
   await StaffUser.findByIdAndDelete(req.params.id);
@@ -223,7 +217,7 @@ app.delete("/api/staff/:id", async (req, res) => {
   });
 });
 
-// edit staff
+// edit staff// (name, role)
 app.put("/api/staff/:id", async (req, res) => {
 
   const { name, role } = req.body;
@@ -235,6 +229,7 @@ app.put("/api/staff/:id", async (req, res) => {
 
   res.json({ success: true });
 });
+
 /* ==============================
    LOGIN (STUDENT + STAFF)
 ============================== */
@@ -242,7 +237,7 @@ app.post("/api/login", async (req, res) => {
 
   const { id, password } = req.body;
 
-  // ===== STUDENT CHECK =====
+  // Student check//
   const student = await Student.findOne({ studentId: id });
 
   if (student) {
@@ -261,7 +256,7 @@ app.post("/api/login", async (req, res) => {
     });
   }
 
-  // ===== STAFF CHECK =====
+  // Staff check//
   const staff = await StaffUser.findOne({ userId: id });
 
   if (staff) {
@@ -280,10 +275,11 @@ app.post("/api/login", async (req, res) => {
     });
   }
 
-  // ===== NOT FOUND =====
+  // Not found//
   res.json({ success: false, message: "User not found" });
 
 });
+
 /* ==============================
    EXIT / ENTRY
 ============================== */
@@ -459,7 +455,7 @@ app.get("/api/outside", async (req, res) => {
     });
   }
 });
-
+// Today's stats//
 app.get("/api/stats/today", async (req, res) => {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
@@ -506,7 +502,7 @@ app.get("/api/pass/:logId", async (req, res) => {
       margin: 50
     });
 
-    // ===== HEADERS (IMPORTANT) =====
+    // headers for PDF response//
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
@@ -515,7 +511,7 @@ app.get("/api/pass/:logId", async (req, res) => {
 
     doc.pipe(res);
 
-    /* ===== HEADER BOX ===== */
+    // header box//
     doc.lineWidth(1.5);
     doc.roundedRect(40, 40, 520, 100, 20).stroke();
 
@@ -528,7 +524,7 @@ app.get("/api/pass/:logId", async (req, res) => {
       50,
       { width: 110 }
     );
-    // ===== TITLE =====
+    // Title//
     doc
       .fillColor("#0f172a")
       .fontSize(26)
@@ -537,7 +533,7 @@ app.get("/api/pass/:logId", async (req, res) => {
         align: "left"
       });
 
-    /* ===== QR CODE ===== */
+    // QR CODE //
     const verifyUrl =
       `${process.env.BASE_URL}/api/verify-pass/${log._id}`;
 
@@ -550,7 +546,7 @@ app.get("/api/pass/:logId", async (req, res) => {
 
     doc.image(qrBuffer, 400, 220, { width: 130 });
 
-    /* ===== STUDENT DETAILS ===== */
+    // Details section//
     let y = 170;
     const x = 60;
     const w = 300;
@@ -587,18 +583,18 @@ app.get("/api/pass/:logId", async (req, res) => {
       );
     }
 
-    /* ===== QR LABEL ===== */
+    // QR code label//
     doc.fontSize(11).text("Scan to Verify", 400, 360, {
       width: 130,
       align: "center"
     });
 
-    /* ===== FOOTER ===== */
+    // Footer//
     doc.fontSize(12).text("Authorized Gate Pass", 0, 500, {
       align: "right"
     });
 
-    // ===== END PDF =====
+    // Finalize PDF //
     doc.end();
 
   } catch (err) {
